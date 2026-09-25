@@ -5,185 +5,230 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import com.krakedev.clientes.entidades.Cliente;
 import com.krakedev.clientes.services.ServicioCliente;
 
-public class ServicioClienteTest {
+/**
+ * Pruebas unitarias para ServicioCliente.
+ * No se usa @BeforeEach: cada test crea su propia instancia de
+ * ServicioCliente (su propio "directorio" en memoria) para garantizar
+ * total independencia entre pruebas.
+ */
+class ServicioClienteTest {
+
+    // ---------- crear() ----------
 
     @Test
-    public void crearClienteCorrectamente() {
-        // Se prueba que un cliente nuevo se agregue correctamente.
-        // Resultado esperado: el método crear retorna el mismo cliente.
+    void crear_debeAgregarCliente_cuandoCedulaNoExiste() {
+        // Qué se prueba: crear() con una cédula nueva debe agregar el cliente
+        // y devolver el mismo objeto agregado.
+        // Resultado esperado: el cliente retornado es igual al enviado y
+        // la lista queda con exactamente 1 elemento.
         ServicioCliente servicio = new ServicioCliente();
 
         Cliente cliente = new Cliente();
-        cliente.setCedula("0102030405");
-        cliente.setNombre("Alexander");
-        cliente.setApellido("Pilachanga");
+        cliente.setCedula("1001");
+        cliente.setNombre("Juan");
+        cliente.setApellido("Perez");
+        cliente.setEmail("juan.perez@test.com");
 
         Cliente resultado = servicio.crear(cliente);
 
         assertEquals(cliente, resultado);
+        assertEquals(1, servicio.listar().size());
     }
 
     @Test
-    public void crearClienteConCedulaDuplicada() {
-        // Se prueba que no se permita crear otro cliente con la misma cédula.
-        // Resultado esperado: el segundo intento retorna null.
+    void crear_debeRetornarNull_cuandoCedulaYaExiste() {
+        // Qué se prueba: crear() con una cédula que ya está registrada
+        // no debe agregar un segundo cliente.
+        // Resultado esperado: retorna null y la lista sigue con 1 elemento
+        // (el original, sin modificar).
         ServicioCliente servicio = new ServicioCliente();
 
-        Cliente cliente1 = new Cliente();
-        cliente1.setCedula("0102030405");
-        cliente1.setNombre("Alexander");
-        cliente1.setApellido("Pilachanga");
+        Cliente original = new Cliente();
+        original.setCedula("1002");
+        original.setNombre("Maria");
+        original.setApellido("Lopez");
+        original.setEmail("maria.lopez@test.com");
+        servicio.crear(original);
 
-        Cliente cliente2 = new Cliente();
-        cliente2.setCedula("0102030405");
-        cliente2.setNombre("Juan");
-        cliente2.setApellido("Perez");
+        Cliente duplicado = new Cliente();
+        duplicado.setCedula("1002");
+        duplicado.setNombre("Otro");
+        duplicado.setApellido("Nombre");
+        duplicado.setEmail("otro@test.com");
 
-        servicio.crear(cliente1);
-        Cliente resultado = servicio.crear(cliente2);
+        Cliente resultado = servicio.crear(duplicado);
 
         assertNull(resultado);
+        assertEquals(1, servicio.listar().size());
     }
 
+    // ---------- buscarPorCedula() ----------
+
     @Test
-    public void buscarClientePorCedulaExistente() {
-        // Se prueba la búsqueda de un cliente que sí existe en la lista.
-        // Resultado esperado: retorna el cliente encontrado.
+    void buscarPorCedula_debeRetornarCliente_cuandoExiste() {
+        // Qué se prueba: buscarPorCedula() con una cédula existente.
+        // Resultado esperado: retorna el cliente correcto (mismos datos).
         ServicioCliente servicio = new ServicioCliente();
 
         Cliente cliente = new Cliente();
-        cliente.setCedula("0102030405");
-        cliente.setNombre("Alexander");
-        cliente.setApellido("Pilachanga");
-
+        cliente.setCedula("1003");
+        cliente.setNombre("Carlos");
+        cliente.setApellido("Ramirez");
+        cliente.setEmail("carlos.ramirez@test.com");
         servicio.crear(cliente);
 
-        Cliente resultado = servicio.buscarPorCedula("0102030405");
+        Cliente encontrado = servicio.buscarPorCedula("1003");
 
-        assertEquals(cliente, resultado);
+        assertEquals(cliente, encontrado);
+        assertEquals("Carlos", encontrado.getNombre());
     }
 
     @Test
-    public void buscarClientePorCedulaInexistente() {
-        // Se prueba la búsqueda de una cédula que no existe.
+    void buscarPorCedula_debeRetornarNull_cuandoNoExiste() {
+        // Qué se prueba: buscarPorCedula() cuando la cédula no está registrada.
         // Resultado esperado: retorna null.
         ServicioCliente servicio = new ServicioCliente();
 
-        Cliente cliente = new Cliente();
-        cliente.setCedula("0102030405");
-        cliente.setNombre("Alexander");
-        cliente.setApellido("Pilachanga");
-
-        servicio.crear(cliente);
-
-        Cliente resultado = servicio.buscarPorCedula("9999999999");
+        Cliente resultado = servicio.buscarPorCedula("9999");
 
         assertNull(resultado);
     }
 
+    // ---------- listar() ----------
+
     @Test
-    public void listarClientesCorrectamente() {
-        // Se prueba que listar() retorne todos los clientes registrados.
-        // Resultado esperado: la lista contiene los dos clientes agregados.
+    void listar_debeRetornarListaVacia_cuandoNoHayClientes() {
+        // Qué se prueba: listar() en un servicio recién creado, sin clientes.
+        // Resultado esperado: la lista existe y está vacía (tamaño 0).
+        ServicioCliente servicio = new ServicioCliente();
+
+        List<Cliente> resultado = servicio.listar();
+
+        assertEquals(0, resultado.size());
+    }
+
+    @Test
+    void listar_debeRetornarTodosLosClientesAgregados() {
+        // Qué se prueba: listar() luego de agregar varios clientes.
+        // Resultado esperado: la lista contiene la misma cantidad de
+        // clientes que fueron creados exitosamente.
         ServicioCliente servicio = new ServicioCliente();
 
         Cliente cliente1 = new Cliente();
-        cliente1.setCedula("0102030405");
-        cliente1.setNombre("Alexander");
-        cliente1.setApellido("Pilachanga");
+        cliente1.setCedula("2001");
+        cliente1.setNombre("Ana");
+        cliente1.setApellido("Torres");
+        cliente1.setEmail("ana.torres@test.com");
 
         Cliente cliente2 = new Cliente();
-        cliente2.setCedula("0102030406");
-        cliente2.setNombre("Juan");
-        cliente2.setApellido("Perez");
+        cliente2.setCedula("2002");
+        cliente2.setNombre("Luis");
+        cliente2.setApellido("Gomez");
+        cliente2.setEmail("luis.gomez@test.com");
 
         servicio.crear(cliente1);
         servicio.crear(cliente2);
 
-        assertEquals(2, servicio.listar().size());
-        assertEquals(cliente1, servicio.listar().get(0));
-        assertEquals(cliente2, servicio.listar().get(1));
+        List<Cliente> resultado = servicio.listar();
+
+        assertEquals(2, resultado.size());
+        assertTrue(resultado.contains(cliente1));
+        assertTrue(resultado.contains(cliente2));
     }
 
+    // ---------- actualizar() ----------
+
     @Test
-    public void actualizarNombreYApellidoClienteExistente() {
-        // Se prueba que un cliente existente pueda actualizar su nombre y apellido.
-        // Resultado esperado: conserva la cédula y cambia nombre y apellido.
+    void actualizar_debeModificarDatos_cuandoClienteExiste() {
+        // Qué se prueba: actualizar() con una cédula existente debe
+        // modificar nombre, apellido y email del cliente encontrado.
+        // Resultado esperado: el cliente retornado (y el almacenado)
+        // refleja los nuevos datos, y la cédula no cambia.
         ServicioCliente servicio = new ServicioCliente();
 
         Cliente cliente = new Cliente();
-        cliente.setCedula("0102030405");
-        cliente.setNombre("Alexander");
-        cliente.setApellido("Pilachanga");
-
+        cliente.setCedula("3001");
+        cliente.setNombre("Pedro");
+        cliente.setApellido("Diaz");
+        cliente.setEmail("pedro.diaz@test.com");
         servicio.crear(cliente);
 
-        Cliente clienteActualizado = new Cliente();
-        clienteActualizado.setCedula("0102030405");
-        clienteActualizado.setNombre("Carlos");
-        clienteActualizado.setApellido("Gomez");
+        Cliente datosActualizados = new Cliente();
+        datosActualizados.setNombre("Pedro Antonio");
+        datosActualizados.setApellido("Diaz Mora");
+        datosActualizados.setEmail("pedro.nuevo@test.com");
 
-        Cliente resultado = servicio.actualizar(
-                "0102030405",
-                clienteActualizado
-        );
+        Cliente resultado = servicio.actualizar("3001", datosActualizados);
 
-        assertEquals("0102030405", resultado.getCedula());
-        assertEquals("Carlos", resultado.getNombre());
-        assertEquals("Gomez", resultado.getApellido());
+        assertEquals("Pedro Antonio", resultado.getNombre());
+        assertEquals("Diaz Mora", resultado.getApellido());
+        assertEquals("pedro.nuevo@test.com", resultado.getEmail());
+        assertEquals("3001", resultado.getCedula());
     }
 
     @Test
-    public void actualizarClienteInexistente() {
-        // Se prueba la actualización de un cliente que no existe.
-        // Resultado esperado: el método retorna null.
+    void actualizar_debeRetornarNull_cuandoClienteNoExiste() {
+        // Qué se prueba: actualizar() con una cédula que no está registrada.
+        // Resultado esperado: retorna null y no se agrega ningún cliente.
         ServicioCliente servicio = new ServicioCliente();
 
-        Cliente clienteActualizado = new Cliente();
-        clienteActualizado.setCedula("0102030405");
-        clienteActualizado.setNombre("Carlos");
-        clienteActualizado.setApellido("Gomez");
+        Cliente datosActualizados = new Cliente();
+        datosActualizados.setNombre("Nombre");
+        datosActualizados.setApellido("Apellido");
+        datosActualizados.setEmail("no.existe@test.com");
 
-        Cliente resultado = servicio.actualizar(
-                "9999999999",
-                clienteActualizado
-        );
+        Cliente resultado = servicio.actualizar("4004", datosActualizados);
 
         assertNull(resultado);
+        assertEquals(0, servicio.listar().size());
     }
 
+    // ---------- eliminar() ----------
+
     @Test
-    public void eliminarClienteExistente() {
-        // Se prueba la eliminación de un cliente que existe.
-        // Resultado esperado: retorna true y el cliente deja de estar en la lista.
+    void eliminar_debeRetornarTrueYQuitarCliente_cuandoExiste() {
+        // Qué se prueba: eliminar() con una cédula existente.
+        // Resultado esperado: retorna true y el cliente ya no aparece
+        // en listar() ni en buscarPorCedula().
         ServicioCliente servicio = new ServicioCliente();
 
         Cliente cliente = new Cliente();
-        cliente.setCedula("0102030405");
-        cliente.setNombre("Alexander");
-        cliente.setApellido("Pilachanga");
-
+        cliente.setCedula("5001");
+        cliente.setNombre("Sofia");
+        cliente.setApellido("Vega");
+        cliente.setEmail("sofia.vega@test.com");
         servicio.crear(cliente);
 
-        boolean resultado = servicio.eliminar("0102030405");
+        boolean resultado = servicio.eliminar("5001");
 
         assertTrue(resultado);
-        assertNull(servicio.buscarPorCedula("0102030405"));
+        assertEquals(0, servicio.listar().size());
+        assertNull(servicio.buscarPorCedula("5001"));
     }
 
     @Test
-    public void eliminarClienteInexistente() {
-        // Se prueba la eliminación de un cliente que no existe.
-        // Resultado esperado: retorna false.
+    void eliminar_debeRetornarFalse_cuandoClienteNoExiste() {
+        // Qué se prueba: eliminar() con una cédula que no está registrada.
+        // Resultado esperado: retorna false y la lista no se modifica.
         ServicioCliente servicio = new ServicioCliente();
 
-        boolean resultado = servicio.eliminar("9999999999");
+        Cliente cliente = new Cliente();
+        cliente.setCedula("6001");
+        cliente.setNombre("Elena");
+        cliente.setApellido("Rios");
+        cliente.setEmail("elena.rios@test.com");
+        servicio.crear(cliente);
+
+        boolean resultado = servicio.eliminar("9999");
 
         assertFalse(resultado);
+        assertEquals(1, servicio.listar().size());
     }
 }
